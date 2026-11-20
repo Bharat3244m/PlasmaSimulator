@@ -3,6 +3,7 @@ const FieldModel = require("./fields");
 const BorisPusher = require("./boris-pusher");
 const WallCollision = require("./wall-collision");
 const Diagnostics = require("./diagnostics");
+const PlasmaInitializer = require("./plasma-initializer");
 
 
 class SimulationEngine {
@@ -139,6 +140,23 @@ class SimulationEngine {
         this.addParticle(particle);
 
         return particle;
+    }
+
+    // ==========================================
+    // PLASMA INITIALIZATION
+    // ==========================================
+
+    initializePlasma(options = {}) {
+
+        this.particles =
+            PlasmaInitializer
+                .createPopulation(
+
+                    this.parameters,
+
+                    options
+
+                );
     }
 
 

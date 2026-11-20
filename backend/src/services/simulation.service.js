@@ -35,9 +35,10 @@ class SimulationService {
             new SimulationEngine(parameters);
 
 
-        // Temporary until PlasmaInitializer
-        // is implemented.
-        engine.createTestParticle();
+        engine.initializePlasma({
+            electronCount: 150,
+            ionCount: 150
+        });
 
 
         const runner =
@@ -282,10 +283,11 @@ class SimulationService {
         simulation.engine.reset();
 
 
-        // Temporary.
-        // PlasmaInitializer will replace this.
         simulation.engine
-            .createTestParticle();
+            .initializePlasma({
+                electronCount: 150,
+                ionCount: 150
+            });
 
 
         simulation.startedAt = null;

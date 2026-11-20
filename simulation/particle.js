@@ -6,43 +6,66 @@ class Particle {
         position,
         velocity,
         charge,
-        mass
+        mass,
+        weight = 1
     }) {
 
         this.id = id;
-        this.species = species;
 
-        // Position in metres
+        this.species =
+            species;
+
+
         this.position = {
+
             x: position.x,
             y: position.y,
             z: position.z ?? 0
+
         };
 
-        // Velocity in metres/second
+
         this.velocity = {
+
             x: velocity.x,
             y: velocity.y,
             z: velocity.z ?? 0
+
         };
 
-        // Coulombs
-        this.charge = charge;
 
-        // Kilograms
-        this.mass = mass;
+        this.charge =
+            charge;
 
-        this.active = true;
+        this.mass =
+            mass;
 
-        this.wallImpactCount = 0;
+
+        // Number of physical particles
+        // represented by this computational
+        // particle.
+
+        this.weight =
+            weight;
+
+
+        this.active =
+            true;
+
+        this.wallImpactCount =
+            0;
     }
 
 
     clone() {
 
         return new Particle({
-            id: this.id,
-            species: this.species,
+
+            id:
+                this.id,
+
+            species:
+                this.species,
 
             position: {
                 ...this.position
@@ -52,11 +75,20 @@ class Particle {
                 ...this.velocity
             },
 
-            charge: this.charge,
-            mass: this.mass
+            charge:
+                this.charge,
+
+            mass:
+                this.mass,
+
+            weight:
+                this.weight
+
         });
     }
+
 }
 
 
-module.exports = Particle;
+module.exports =
+    Particle;
