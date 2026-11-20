@@ -3,13 +3,16 @@ const { v4: uuidv4 } = require("uuid");
 const SimulationEngine =
     require("../../../simulation/simulation-engine");
 
+const SimulationRunner =
+    require("../../../simulation/simulation-runner");
+
 
 class SimulationService {
 
     constructor() {
 
         // Temporary in-memory storage.
-        // MongoDB will replace persistence later.
+        // MongoDB persistence will be added later.
 
         this.simulations = new Map();
     }
@@ -24,7 +27,6 @@ class SimulationService {
         const simulationId =
             uuidv4();
 
-
         const now =
             new Date().toISOString();
 
@@ -33,11 +35,19 @@ class SimulationService {
             new SimulationEngine(parameters);
 
 
-        // Temporary particle for engine testing.
-        // Later particle generation will use
-        // temperature/density parameters.
-
+        // Temporary until PlasmaInitializer
+        // is implemented.
         engine.createTestParticle();
+
+
+        const runner =
+            new SimulationRunner(
+                engine,
+                {
+                    updateRate: 60,
+                    stepsPerUpdate: 100
+                }
+            );
 
 
         const simulation = {
@@ -45,10 +55,6 @@ class SimulationService {
             schemaVersion: 1,
 
             simulationId,
-
-            status: "idle",
-
-            elapsedSeconds: 0,
 
             parameters: {
                 ...parameters
@@ -60,7 +66,9 @@ class SimulationService {
             startedAt: null,
             completedAt: null,
 
-            engine
+            // Runtime components
+            engine,
+            runner
         };
 
 
@@ -96,6 +104,7 @@ class SimulationService {
                 );
 
             error.status = 404;
+
             error.code =
                 "SIMULATION_NOT_FOUND";
 
@@ -108,7 +117,7 @@ class SimulationService {
 
 
     // ==========================================
-    // GET
+    // GET SIMULATION
     // ==========================================
 
     get(simulationId) {
@@ -119,9 +128,6 @@ class SimulationService {
             );
 
 
-        this.syncWithEngine(simulation);
-
-
         return this.toPublicSimulation(
             simulation
         );
@@ -129,7 +135,7 @@ class SimulationService {
 
 
     // ==========================================
-    // ACTION
+    // PERFORM ACTION
     // ==========================================
 
     performAction(
@@ -174,6 +180,7 @@ class SimulationService {
                     );
 
                 error.status = 400;
+
                 error.code =
                     "INVALID_ACTION";
 
@@ -184,9 +191,6 @@ class SimulationService {
 
         simulation.updatedAt =
             new Date().toISOString();
-
-
-        this.syncWithEngine(simulation);
 
 
         return this.toPublicSimulation(
@@ -201,8 +205,12 @@ class SimulationService {
 
     start(simulation) {
 
+        // Engine is now the single source
+        // of truth for runtime status.
+
         if (
-            simulation.status === "running"
+            simulation.engine.status ===
+            "running"
         ) {
 
             const error =
@@ -211,6 +219,7 @@ class SimulationService {
                 );
 
             error.status = 409;
+
             error.code =
                 "INVALID_STATE_TRANSITION";
 
@@ -220,8 +229,7 @@ class SimulationService {
 
         simulation.engine.start();
 
-        simulation.status =
-            "running";
+        simulation.runner.start();
 
 
         if (!simulation.startedAt) {
@@ -239,7 +247,8 @@ class SimulationService {
     pause(simulation) {
 
         if (
-            simulation.status !== "running"
+            simulation.engine.status !==
+            "running"
         ) {
 
             const error =
@@ -248,6 +257,7 @@ class SimulationService {
                 );
 
             error.status = 409;
+
             error.code =
                 "INVALID_STATE_TRANSITION";
 
@@ -255,10 +265,9 @@ class SimulationService {
         }
 
 
-        simulation.engine.pause();
+        simulation.runner.pause();
 
-        simulation.status =
-            "paused";
+        simulation.engine.pause();
     }
 
 
@@ -268,25 +277,20 @@ class SimulationService {
 
     reset(simulation) {
 
+        simulation.runner.stop();
+
         simulation.engine.reset();
 
 
-        // Temporary test particle.
+        // Temporary.
+        // PlasmaInitializer will replace this.
         simulation.engine
             .createTestParticle();
 
 
-        simulation.status =
-            "idle";
+        simulation.startedAt = null;
 
-        simulation.elapsedSeconds =
-            0;
-
-        simulation.startedAt =
-            null;
-
-        simulation.completedAt =
-            null;
+        simulation.completedAt = null;
     }
 
 
@@ -316,10 +320,11 @@ class SimulationService {
                 simulation.simulationId,
 
             status:
-                simulation.status,
+                simulation.engine.status,
 
             elapsedSeconds:
-                snapshot.elapsedSeconds,
+                simulation.engine
+                    .elapsedSeconds,
 
             metrics: {
 
@@ -327,11 +332,11 @@ class SimulationService {
                     snapshot.metrics
                         .particleCount,
 
-                // Not implemented yet.
-                peakDensity: null,
+                peakDensity:
+                    null,
 
-                // Not implemented yet.
-                energyConfinementMs: null,
+                energyConfinementMs:
+                    null,
 
                 wallImpactCount:
                     snapshot.metrics
@@ -344,22 +349,7 @@ class SimulationService {
 
 
     // ==========================================
-    // ENGINE SYNCHRONIZATION
-    // ==========================================
-
-    syncWithEngine(simulation) {
-
-        simulation.status =
-            simulation.engine.status;
-
-        simulation.elapsedSeconds =
-            simulation.engine
-                .elapsedSeconds;
-    }
-
-
-    // ==========================================
-    // REMOVE ENGINE BEFORE RETURNING JSON
+    // PUBLIC API REPRESENTATION
     // ==========================================
 
     toPublicSimulation(simulation) {
@@ -372,15 +362,22 @@ class SimulationService {
             simulationId:
                 simulation.simulationId,
 
+
+            // Runtime state comes DIRECTLY
+            // from SimulationEngine.
+
             status:
-                simulation.status,
+                simulation.engine.status,
 
             elapsedSeconds:
-                simulation.elapsedSeconds,
+                simulation.engine
+                    .elapsedSeconds,
+
 
             parameters: {
                 ...simulation.parameters
             },
+
 
             createdAt:
                 simulation.createdAt,

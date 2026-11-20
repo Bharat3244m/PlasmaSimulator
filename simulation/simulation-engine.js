@@ -152,6 +152,16 @@ class SimulationEngine {
             return;
         }
 
+        if (
+            this.status !== "idle" &&
+            this.status !== "paused"
+        ) {
+
+            throw new Error(
+                `Cannot start simulation from state: ${this.status}`
+            );
+        }
+
 
         this.status = "running";
     }
