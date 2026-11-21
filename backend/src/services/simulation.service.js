@@ -6,6 +6,9 @@ const SimulationEngine =
 const SimulationRunner =
     require("../../../simulation/simulation-runner");
 
+const SnapshotSerializer =
+    require("../../../simulation/snapshot-serializer");
+
 
 class SimulationService {
 
@@ -15,6 +18,41 @@ class SimulationService {
         // MongoDB persistence will be added later.
 
         this.simulations = new Map();
+        this.io = null;
+    }
+
+    emitSnapshot(
+        simulationId,
+        engine
+    ) {
+
+        if (!this.io) {
+            return;
+        }
+
+
+        const snapshot =
+            SnapshotSerializer
+                .serialize(
+                    simulationId,
+                    engine
+                );
+
+
+        const room =
+            `simulation:${simulationId}`;
+
+
+        this.io
+            .to(room)
+            .emit(
+                "simulation.updated",
+                snapshot
+            );
+    }
+
+    setSocketServer(io) {
+        this.io = io;
     }
 
 
@@ -45,8 +83,21 @@ class SimulationService {
             new SimulationRunner(
                 engine,
                 {
+
                     updateRate: 60,
-                    stepsPerUpdate: 100
+
+                    stepsPerUpdate: 100,
+
+
+                    onSnapshot:
+                        () => {
+
+                            this.emitSnapshot(
+                                simulationId,
+                                engine
+                            );
+                        }
+
                 }
             );
 
