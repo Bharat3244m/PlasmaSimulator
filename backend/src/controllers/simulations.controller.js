@@ -7,7 +7,7 @@ const simulationService =
 // ==========================================
 
 exports.createSimulation =
-    (req, res, next) => {
+    async (req, res, next) => {
 
         try {
 
@@ -40,7 +40,7 @@ exports.createSimulation =
 
 
             const simulation =
-                simulationService.create(
+                await simulationService.create(
                     parameters
                 );
 

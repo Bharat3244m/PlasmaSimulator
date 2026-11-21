@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const http =
     require("http");
 
@@ -10,6 +12,8 @@ const app =
 const simulationService =
     require("./services/simulation.service");
 
+const connectDatabase =
+    require("./config/database");
 
 const PORT =
     process.env.PORT || 3000;
@@ -167,40 +171,69 @@ io.on(
 // START SERVER
 // ==========================================
 
-server.listen(
-    PORT,
-    () => {
+async function startServer() {
 
-        console.log(
-            "================================"
+    try {
+
+        // Connect database first
+        await connectDatabase();
+
+
+        // Start HTTP + Socket.IO only
+        // after database is available.
+
+        server.listen(
+            PORT,
+            () => {
+
+                console.log(
+                    "================================"
+                );
+
+                console.log(
+                    "Tokamak Simulator Backend"
+                );
+
+                console.log(
+                    "================================"
+                );
+
+                console.log(
+                    `Server: http://localhost:${PORT}`
+                );
+
+                console.log(
+                    `Health: http://localhost:${PORT}/api/health`
+                );
+
+                console.log(
+                    `API: http://localhost:${PORT}/api/v1`
+                );
+
+                console.log(
+                    "Socket.IO: enabled"
+                );
+
+                console.log(
+                    "MongoDB: connected"
+                );
+
+                console.log(
+                    "================================"
+                );
+
+            }
         );
 
-        console.log(
-            "Tokamak Simulator Backend"
+    } catch (error) {
+
+        console.error(
+            "Backend startup failed."
         );
 
-        console.log(
-            "================================"
-        );
-
-        console.log(
-            `Server: http://localhost:${PORT}`
-        );
-
-        console.log(
-            `Health: http://localhost:${PORT}/api/health`
-        );
-
-        console.log(
-            `API: http://localhost:${PORT}/api/v1`
-        );
-
-        console.log(
-            "Socket.IO: enabled"
-        );
-
-        console.log(
-            "================================"
-        );
+        process.exit(1);
     }
-);
+}
+
+
+startServer();
