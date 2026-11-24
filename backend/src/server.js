@@ -1,53 +1,34 @@
 require("dotenv").config();
 
-const http =
-    require("http");
+const http = require("http");
 
-const { Server } =
-    require("socket.io");
+const { Server } = require("socket.io");
 
-const app =
-    require("./app");
+const app = require("./app");
 
-const simulationService =
-    require("./services/simulation.service");
+const simulationService = require("./services/simulation.service");
 
-const connectDatabase =
-    require("./config/database");
+const connectDatabase = require("./config/database");
 
-const PORT =
-    process.env.PORT || 3000;
-
+const PORT = process.env.PORT || 3000;
 
 // ==========================================
 // HTTP SERVER
 // ==========================================
 
-const server =
-    http.createServer(app);
-
+const server = http.createServer(app);
 
 // ==========================================
 // SOCKET.IO
 // ==========================================
 
-const io =
-    new Server(
-        server,
-        {
-            cors: {
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:4200",
 
-                origin:
-                    "http://localhost:4200",
-
-                methods: [
-                    "GET",
-                    "POST"
-                ]
-            }
-        }
-    );
-
+        methods: ["GET", "POST"],
+    },
+});
 
 // ==========================================
 // GIVE SOCKET.IO TO SIMULATION SERVICE
@@ -55,185 +36,127 @@ const io =
 
 simulationService.setSocketServer(io);
 
-
 // ==========================================
 // SOCKET CONNECTIONS
 // ==========================================
 
-io.on(
-    "connection",
-    socket => {
+io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id);
 
-        console.log(
-            "Socket connected:",
-            socket.id
-        );
+    // ======================================
+    // JOIN SIMULATION
+    // ======================================
 
+    socket.on("simulation.subscribe", async (simulationId) => {
+        try {
+            const document = await simulationService.findDocument(simulationId);
 
-        // ======================================
-        // JOIN SIMULATION
-        // ======================================
+            await simulationService.ensureRuntime(document);
 
-        socket.on(
-            "simulation.subscribe",
-            simulationId => {
+            const room = `simulation:${simulationId}`;
 
-                try {
+            socket.join(room);
 
-                    // Make sure simulation exists.
+            socket.emit("simulation.subscribed", {
+                simulationId,
+            });
+        } catch (error) {
+            socket.emit("simulation.error", {
+                code: error.code || "SUBSCRIPTION_ERROR",
 
-                    simulationService
-                        .findInternal(
-                            simulationId
-                        );
+                message: error.message,
+            });
+        }
+    });
 
+    // ======================================
+    // LEAVE SIMULATION
+    // ======================================
 
-                    const room =
-                        `simulation:${simulationId}`;
+    socket.on("simulation.unsubscribe", (simulationId) => {
+        const room = `simulation:${simulationId}`;
 
+        socket.leave(room);
 
-                    socket.join(room);
+        console.log(`${socket.id} unsubscribed from ${simulationId}`);
+    });
 
+    // ======================================
+    // DISCONNECT
+    // ======================================
 
-                    console.log(
-                        `${socket.id} subscribed to ${simulationId}`
-                    );
-
-
-                    socket.emit(
-                        "simulation.subscribed",
-                        {
-                            simulationId
-                        }
-                    );
-
-                } catch (error) {
-
-                    socket.emit(
-                        "simulation.error",
-                        {
-                            code:
-                                error.code ||
-                                "SUBSCRIPTION_ERROR",
-
-                            message:
-                                error.message
-                        }
-                    );
-                }
-            }
-        );
-
-
-        // ======================================
-        // LEAVE SIMULATION
-        // ======================================
-
-        socket.on(
-            "simulation.unsubscribe",
-            simulationId => {
-
-                const room =
-                    `simulation:${simulationId}`;
-
-
-                socket.leave(room);
-
-
-                console.log(
-                    `${socket.id} unsubscribed from ${simulationId}`
-                );
-            }
-        );
-
-
-        // ======================================
-        // DISCONNECT
-        // ======================================
-
-        socket.on(
-            "disconnect",
-            reason => {
-
-                console.log(
-                    "Socket disconnected:",
-                    socket.id,
-                    reason
-                );
-            }
-        );
-
-    }
-);
-
+    socket.on("disconnect", (reason) => {
+        console.log("Socket disconnected:", socket.id, reason);
+    });
+});
 
 // ==========================================
 // START SERVER
 // ==========================================
 
 async function startServer() {
-
     try {
-
         // Connect database first
         await connectDatabase();
-
 
         // Start HTTP + Socket.IO only
         // after database is available.
 
-        server.listen(
-            PORT,
-            () => {
+        server.listen(PORT, () => {
+            console.log("================================");
 
-                console.log(
-                    "================================"
-                );
+            console.log("Tokamak Simulator Backend");
 
-                console.log(
-                    "Tokamak Simulator Backend"
-                );
+            console.log("================================");
 
-                console.log(
-                    "================================"
-                );
+            console.log(`Server: http://localhost:${PORT}`);
 
-                console.log(
-                    `Server: http://localhost:${PORT}`
-                );
+            console.log(`Health: http://localhost:${PORT}/api/health`);
 
-                console.log(
-                    `Health: http://localhost:${PORT}/api/health`
-                );
+            console.log(`API: http://localhost:${PORT}/api/v1`);
 
-                console.log(
-                    `API: http://localhost:${PORT}/api/v1`
-                );
+            console.log("Socket.IO: enabled");
 
-                console.log(
-                    "Socket.IO: enabled"
-                );
+            console.log("MongoDB: connected");
 
-                console.log(
-                    "MongoDB: connected"
-                );
-
-                console.log(
-                    "================================"
-                );
-
-            }
-        );
-
+            console.log("================================");
+        });
     } catch (error) {
-
-        console.error(
-            "Backend startup failed."
-        );
+        console.error("Backend startup failed.");
 
         process.exit(1);
     }
 }
 
+async function shutdown(signal) {
+    console.log(`\n${signal} received. Saving simulations...`);
+
+    try {
+        await simulationService.checkpointAll();
+
+        console.log("Simulation summaries saved.");
+    } catch (error) {
+        console.error(
+            "Failed to save some simulation summaries:",
+            error.message,
+        );
+    }
+
+    server.close(() => {
+        console.log("HTTP server closed.");
+
+        process.exit(0);
+    });
+
+    // Safety fallback.
+
+    setTimeout(() => {
+        process.exit(1);
+    }, 5000).unref();
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 startServer();

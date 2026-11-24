@@ -1,44 +1,29 @@
-const express =
-    require("express");
+const express = require("express");
 
-const controller =
-    require("../controllers/simulations.controller");
+const controller = require("../controllers/simulations.controller");
 
-
-const router =
-    express.Router();
-
+const router = express.Router();
 
 // Create simulation
 
-router.post(
-    "/simulations",
-    controller.createSimulation
-);
-
+router.post("/simulations", controller.createSimulation);
 
 // Get simulation
 
-router.get(
-    "/simulations/:simulationId",
-    controller.getSimulation
-);
-
+router.get("/simulations/:simulationId", controller.getSimulation);
 
 // Start / Pause / Reset
 
-router.post(
-    "/simulations/:simulationId/actions",
-    controller.performAction
-);
-
+router.post("/simulations/:simulationId/actions", controller.performAction);
 
 // Results
 
-router.get(
-    "/simulations/:simulationId/results",
-    controller.getResults
-);
+router.get("/simulations/:simulationId/results", controller.getResults);
 
+router.get("/simulations", controller.listSimulations);
+
+router.delete("/simulations/:simulationId", controller.deleteSimulation);
+
+router.put("/simulations/:simulationId", controller.updateSimulation);
 
 module.exports = router;

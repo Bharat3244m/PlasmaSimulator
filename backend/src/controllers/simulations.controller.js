@@ -1,234 +1,170 @@
-const simulationService =
-    require("../services/simulation.service");
-
+const simulationService = require("../services/simulation.service");
 
 // ==========================================
 // CREATE SIMULATION
 // ==========================================
 
-exports.createSimulation =
-    async (req, res, next) => {
+exports.createSimulation = async (req, res, next) => {
+    try {
+        const { schemaVersion, parameters } = req.body;
 
-        try {
+        if (schemaVersion !== 1) {
+            const error = new Error("schemaVersion must be 1");
 
-            const {
-                schemaVersion,
-                parameters
-            } = req.body;
+            error.status = 400;
+            error.code = "VALIDATION_ERROR";
 
-
-            if (
-                schemaVersion !== 1
-            ) {
-
-                const error =
-                    new Error(
-                        "schemaVersion must be 1"
-                    );
-
-                error.status = 400;
-                error.code =
-                    "VALIDATION_ERROR";
-
-                throw error;
-            }
-
-
-            validateParameters(
-                parameters
-            );
-
-
-            const simulation =
-                await simulationService.create(
-                    parameters
-                );
-
-
-            res.status(201)
-                .json(simulation);
-
-        } catch (error) {
-
-            next(error);
-
+            throw error;
         }
-    };
 
+        validateParameters(parameters);
+
+        const simulation = await simulationService.create(parameters);
+
+        res.status(201).json(simulation);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ==========================================
 // GET SIMULATION
 // ==========================================
 
-exports.getSimulation =
-    (req, res, next) => {
+exports.getSimulation = async (req, res, next) => {
+    try {
+        const simulation = await simulationService.get(req.params.simulationId);
 
-        try {
-
-            const simulation =
-                simulationService.get(
-                    req.params.simulationId
-                );
-
-
-            res.json(simulation);
-
-        } catch (error) {
-
-            next(error);
-
-        }
-    };
-
+        res.json(simulation);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ==========================================
 // ACTION
 // ==========================================
 
-exports.performAction =
-    (req, res, next) => {
+exports.performAction = async (req, res, next) => {
+    try {
+        const { action } = req.body;
 
-        try {
+        const simulation = await simulationService.performAction(
+            req.params.simulationId,
 
-            const { action } =
-                req.body;
+            action,
+        );
 
+        res.json(simulation);
+    } catch (error) {
+        next(error);
+    }
+};
 
-            const simulation =
-                simulationService
-                    .performAction(
+exports.listSimulations = async (req, res, next) => {
+    try {
+        const simulations = await simulationService.list();
 
-                        req.params
-                            .simulationId,
-
-                        action
-                    );
-
-
-            res.json(simulation);
-
-        } catch (error) {
-
-            next(error);
-
-        }
-    };
-
+        res.json(simulations);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ==========================================
 // RESULTS
 // ==========================================
 
-exports.getResults =
-    (req, res, next) => {
+exports.getResults = (req, res, next) => {
+    try {
+        const results = simulationService.getResults(req.params.simulationId);
 
-        try {
+        res.json(results);
+    } catch (error) {
+        next(error);
+    }
+};
 
-            const results =
-                simulationService
-                    .getResults(
-                        req.params
-                            .simulationId
-                    );
+exports.updateSimulation = async (req, res, next) => {
+    try {
+        const { name, description, parameters } = req.body;
 
-
-            res.json(results);
-
-        } catch (error) {
-
-            next(error);
-
+        if (parameters) {
+            validateParameters(parameters);
         }
-    };
 
+        const simulation = await simulationService.update(
+            req.params.simulationId,
+
+            {
+                name,
+                description,
+                parameters,
+            },
+        );
+
+        res.json(simulation);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteSimulation = async (req, res, next) => {
+    try {
+        const result = await simulationService.delete(req.params.simulationId);
+
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ==========================================
 // PARAMETER VALIDATION
 // ==========================================
 
-function validateParameters(
-    parameters
-) {
-
+function validateParameters(parameters) {
     const required = [
-
         "magneticField",
         "electronDensity",
         "electronTemperature",
         "ionTemperature",
-        "chamberRadius"
-
+        "chamberRadius",
     ];
 
-
-    if (
-        !parameters ||
-        typeof parameters !== "object"
-    ) {
-
-        const error =
-            new Error(
-                "parameters object is required"
-            );
+    if (!parameters || typeof parameters !== "object") {
+        const error = new Error("parameters object is required");
 
         error.status = 400;
-        error.code =
-            "VALIDATION_ERROR";
+        error.code = "VALIDATION_ERROR";
 
         throw error;
     }
 
-
     const fields = {};
 
-
     for (const name of required) {
+        const value = parameters[name];
 
-        const value =
-            parameters[name];
-
-
-        if (
-            typeof value !== "number" ||
-            !Number.isFinite(value)
-        ) {
-
-            fields[name] =
-                "Must be a finite number";
-
+        if (typeof value !== "number" || !Number.isFinite(value)) {
+            fields[name] = "Must be a finite number";
         } else if (value < 0) {
-
-            fields[name] =
-                "Must be >= 0";
+            fields[name] = "Must be >= 0";
         }
     }
 
-
-    if (
-        parameters.chamberRadius === 0
-    ) {
-
-        fields.chamberRadius =
-            "Must be greater than 0";
+    if (parameters.chamberRadius === 0) {
+        fields.chamberRadius = "Must be greater than 0";
     }
 
-
-    if (
-        Object.keys(fields).length > 0
-    ) {
-
-        const error =
-            new Error(
-                "Invalid simulation parameters"
-            );
+    if (Object.keys(fields).length > 0) {
+        const error = new Error("Invalid simulation parameters");
 
         error.status = 400;
 
-        error.code =
-            "VALIDATION_ERROR";
+        error.code = "VALIDATION_ERROR";
 
-        error.fields =
-            fields;
+        error.fields = fields;
 
         throw error;
     }
