@@ -1,1026 +1,364 @@
 # Plasma Simulator
 
-A browser-based educational plasma simulation that models charged-particle motion in a simplified tokamak-inspired confinement chamber.
+A browser-based educational plasma simulator for visualizing charged-particle motion inside a simplified tokamak-inspired confinement chamber.
 
-The project combines a numerical plasma simulation engine with a Node.js/Express backend, MongoDB persistence, Socket.IO live updates, and an AngularJS frontend.
+The project uses a numerical particle simulation engine with a Node.js backend, MongoDB persistence, Socket.IO live updates, and an AngularJS frontend.
 
-> **Scientific scope:** This is a reduced educational plasma model, not a full-fidelity tokamak or fusion reactor simulation.
+> This is a simplified educational plasma model, not a full tokamak or fusion-reactor simulation.
 
 ---
 
 ## Features
 
-### Simulation Engine
-
-- Electron and deuterium-ion particles
-- Temperature-based thermal particle initialization
-- Macroparticle representation
+- Electron and deuterium-ion simulation
+- Temperature-based particle initialization
 - Lorentz-force particle motion
 - Boris particle pusher
-- Prescribed magnetic field
+- Prescribed electromagnetic fields
 - Circular confinement chamber
 - Wall collision detection
-- Wall-impact diagnostics
-- Start, pause, and reset simulation controls
-- Continuous numerical stepping
-- Real-time simulation snapshots
-
-### Backend
-
-- Node.js + Express REST API
-- Simulation lifecycle management
-- Input validation
-- Standardized API errors
-- UUID-based simulation IDs
-- MongoDB persistence using Mongoose
-- Create, read, update, list, and delete simulations
-- Persistent simulation configurations
-- Run-summary checkpointing
-- Runtime reconstruction from MongoDB
-- Socket.IO live simulation streaming
-
-### Frontend
-
-The frontend is developed using AngularJS and Canvas.
-
-Its responsibilities include:
-
-- Simulation parameter controls
-- Start / Pause / Reset controls
-- Rendering particle positions received from the simulation engine
-- Displaying diagnostics
-- Loading and saving simulations
-- Scaling physical coordinates into Canvas coordinates
-
-The frontend must not independently calculate particle motion.
+- Real-time particle visualization
+- Start, pause, and reset controls
+- MongoDB experiment persistence
+- REST API
+- Socket.IO live updates
+- AngularJS + HTML5 Canvas frontend
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
-                    AngularJS Frontend
-                           |
-             +-------------+-------------+
-             |                           |
-          REST API                    Socket.IO
-             |                           |
-             v                           v
-        Express API              simulation.updated
-             |                           ^
-             v                           |
-      SimulationService ----------------+
-          |          |
-          |          |
-          v          v
-     MongoDB     SimulationRunner
-                       |
-                       v
-                SimulationEngine
-                       |
-          +------------+------------+
-          |            |            |
-          v            v            v
-      FieldModel   BorisPusher   WallCollision
-                       |
-                       v
-                    Particles
+AngularJS Frontend
+       |
+       | REST + Socket.IO
+       v
+Express Backend
+       |
+       +------ MongoDB
+       |
+       v
+Simulation Engine
+       |
+       +-- Field Model
+       +-- Boris Pusher
+       +-- Wall Collision
+       +-- Diagnostics
+       |
+       v
+Particles
 ```
 
-REST is used for simulation configuration, lifecycle operations, persistence, and results.
-
-Socket.IO is used for live particle snapshots.
-
-MongoDB does **not** store every animation frame.
+The backend performs the physics simulation. The frontend only renders particle positions received from the backend.
 
 ---
 
-# Project Structure
-
-```text
-plasma-simulator/
-|
-├── README.md
-├── .gitignore
-|
-├── simulation/
-|   ├── constants.js
-|   ├── particle.js
-|   ├── fields.js
-|   ├── boris-pusher.js
-|   ├── wall-collision.js
-|   ├── diagnostics.js
-|   ├── plasma-initializer.js
-|   ├── simulation-engine.js
-|   ├── simulation-runner.js
-|   ├── snapshot-serializer.js
-|   |
-|   └── tests/
-|       ├── physics.test.js
-|       ├── zero-field.test.js
-|       ├── wall-collision.test.js
-|       ├── plasma-initializer.test.js
-|       └── snapshot-serializer.test.js
-|
-├── backend/
-|   ├── package.json
-|   ├── .env
-|   ├── .env.example
-|   |
-|   ├── src/
-|   |   ├── server.js
-|   |   ├── app.js
-|   |   |
-|   |   ├── config/
-|   |   |   └── database.js
-|   |   |
-|   |   ├── models/
-|   |   |   └── simulation.model.js
-|   |   |
-|   |   ├── routes/
-|   |   |   └── simulations.routes.js
-|   |   |
-|   |   ├── controllers/
-|   |   |   └── simulations.controller.js
-|   |   |
-|   |   ├── services/
-|   |   |   └── simulation.service.js
-|   |   |
-|   |   └── middleware/
-|   |       └── error-handler.js
-|   |
-|   └── tests/
-|       └── socket-client.test.js
-|
-└── frontend/
-    └── AngularJS frontend files
-```
-
----
-
-# Technologies
+## Technologies
 
 | Technology | Purpose |
 |---|---|
-| JavaScript | Main implementation language |
+| JavaScript | Main language |
+| AngularJS | Frontend |
+| HTML5 Canvas | Particle visualization |
 | Node.js | Backend runtime |
 | Express.js | REST API |
-| Socket.IO | Live simulation streaming |
-| MongoDB | Persistent storage |
-| Mongoose | MongoDB object modeling |
-| AngularJS | Frontend application |
-| HTML5 Canvas | Particle visualization |
+| Socket.IO | Real-time updates |
+| MongoDB | Database |
+| Mongoose | MongoDB integration |
 
 ---
 
-# Scientific Model
-
-Particle motion is based on the Lorentz force:
+## Project Structure
 
 ```text
-m dv/dt = q(E + v x B)
+plasma-simulator/
+│
+├── frontend/
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── directives/
+│   │   ├── config/
+│   │   └── constants/
+│   └── templates/
+│
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── routes/
+│   │   ├── models/
+│   │   ├── middleware/
+│   │   └── config/
+│   └── package.json
+│
+└── simulation/
+    ├── simulation-engine.js
+    ├── simulation-runner.js
+    ├── particle.js
+    ├── plasma-initializer.js
+    ├── fields.js
+    ├── boris-pusher.js
+    ├── wall-collision.js
+    ├── diagnostics.js
+    └── tests/
 ```
-
-where:
-
-- `m` = particle mass
-- `q` = particle charge
-- `E` = electric field
-- `B` = magnetic field
-- `v` = particle velocity
-
-The current first-version model uses a prescribed magnetic field.
-
-The particle trajectories are advanced using the **Boris pusher**, which is well suited for numerical integration of charged-particle motion in electromagnetic fields.
 
 ---
 
-## Particle Species
+## Simulation Parameters
 
-The current simulation contains:
-
-### Electrons
-
-```text
-charge = -e
-mass   = electron mass
-```
-
-### Deuterium ions
-
-```text
-charge = +e
-mass   = deuterium ion mass
-```
-
-The initial particle velocities are generated from the configured electron and ion temperatures.
-
-Because a physical plasma contains an enormous number of particles, each computational particle represents many real particles.
-
-These are referred to as **macroparticles**.
-
----
-
-# Simulation Parameters
-
-The following names and units form the canonical frontend/backend contract.
-
-| Property | Meaning | Unit |
+| Parameter | Meaning | Unit |
 |---|---|---|
-| `magneticField` | Applied magnetic field | T |
-| `electronDensity` | Electron density | 10^19 m^-3 |
+| `magneticField` | Magnetic field | T |
+| `electronDensity` | Electron density | 10¹⁹ m⁻³ |
 | `electronTemperature` | Electron temperature | eV |
 | `ionTemperature` | Ion temperature | eV |
 | `chamberRadius` | Chamber radius | m |
 
-Example:
+---
 
-```json
-{
-  "magneticField": 2.4,
-  "electronDensity": 4.8,
-  "electronTemperature": 125,
-  "ionTemperature": 38,
-  "chamberRadius": 0.42
-}
+## Physics Model
+
+Particle motion follows the Lorentz force:
+
+```text
+F = q(E + v × B)
 ```
 
-Do not rename these fields or change their units without updating the shared frontend/backend contract.
+Particle trajectories are advanced using the **Boris pusher**.
+
+The simulation currently uses electrons and deuterium ions represented by computational macroparticles.
+
+The model is intentionally simplified for educational visualization.
 
 ---
 
-# Prerequisites
+## Requirements
 
 Install:
 
 - Node.js
 - npm
 - MongoDB
-- MongoDB Shell (`mongosh`) — optional but useful for development
 
-Check:
-
-```bash
-node --version
-npm --version
-mongod --version
-```
-
-Optional:
-
-```bash
-mongosh --version
-```
-
----
-
-# MongoDB Setup
-
-Check whether MongoDB is running:
+Check that MongoDB is running:
 
 ```bash
 sudo systemctl status mongod
 ```
 
-Start it if necessary:
+If necessary:
 
 ```bash
 sudo systemctl start mongod
 ```
 
-Enable MongoDB at boot:
-
-```bash
-sudo systemctl enable mongod
-```
-
-The development database is:
-
-```text
-plasma_simulator
-```
-
 ---
 
-# Environment Configuration
+## Setup
 
-Inside `backend/`, create:
+Clone the repository:
 
-```text
-.env
+```bash
+git clone https://github.com/Bharat3244m/PlasmaSimulator.git
+cd PlasmaSimulator
 ```
 
-Example:
+### Backend
+
+Install dependencies:
+
+```bash
+cd backend
+npm install
+```
+
+Create `backend/.env`:
 
 ```env
 PORT=3000
 MONGODB_URI=mongodb://127.0.0.1:27017/plasma_simulator
 ```
 
-Do not commit `.env`.
-
-The repository should contain:
-
-```text
-.env.example
-```
-
-with example values.
-
----
-
-# Backend Setup
-
-Enter the backend directory:
-
-```bash
-cd backend
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start:
+Start the backend:
 
 ```bash
 npm start
 ```
 
-Development mode:
-
-```bash
-npm run dev
-```
-
-Expected output:
+Backend:
 
 ```text
-MongoDB connected successfully
-Database: plasma_simulator
-
-================================
-Tokamak Simulator Backend
-================================
-Server: http://localhost:3000
-Health: http://localhost:3000/api/health
-API: http://localhost:3000/api/v1
-Socket.IO: enabled
-MongoDB: connected
-================================
+http://localhost:3000
 ```
 
----
-
-# Health Check
-
-```bash
-curl http://localhost:3000/api/health
-```
-
-Example:
-
-```json
-{
-  "status": "ok",
-  "service": "tokamak-simulator-backend",
-  "timestamp": "2026-11-24T00:00:00.000Z"
-}
-```
-
----
-
-# REST API
-
-Base path:
+Health check:
 
 ```text
-/api/v1
-```
-
-## Create Simulation
-
-```http
-POST /api/v1/simulations
-```
-
-Example:
-
-```bash
-curl -X POST \
-http://localhost:3000/api/v1/simulations \
--H "Content-Type: application/json" \
--d '{
-  "schemaVersion": 1,
-  "parameters": {
-    "magneticField": 2.4,
-    "electronDensity": 4.8,
-    "electronTemperature": 125,
-    "ionTemperature": 38,
-    "chamberRadius": 0.42
-  }
-}'
+http://localhost:3000/api/health
 ```
 
 ---
 
-## List Simulations
+### Frontend
 
-```http
-GET /api/v1/simulations
-```
+From the project root:
 
 ```bash
-curl http://localhost:3000/api/v1/simulations
+npx http-server frontend -p 4200
 ```
 
----
-
-## Get Simulation
-
-```http
-GET /api/v1/simulations/:simulationId
-```
-
-Example:
-
-```bash
-curl \
-http://localhost:3000/api/v1/simulations/$ID
-```
-
----
-
-## Update Simulation
-
-```http
-PUT /api/v1/simulations/:simulationId
-```
-
-Example:
-
-```bash
-curl -X PUT \
-http://localhost:3000/api/v1/simulations/$ID \
--H "Content-Type: application/json" \
--d '{
-  "name": "Baseline Experiment",
-  "description": "2.4 T baseline confinement experiment"
-}'
-```
-
-Parameters can also be updated while the simulation is not running.
-
----
-
-## Delete Simulation
-
-```http
-DELETE /api/v1/simulations/:simulationId
-```
-
-```bash
-curl -X DELETE \
-http://localhost:3000/api/v1/simulations/$ID
-```
-
----
-
-# Simulation Controls
-
-All lifecycle actions use:
-
-```http
-POST /api/v1/simulations/:simulationId/actions
-```
-
-## Start
-
-```bash
-curl -X POST \
-http://localhost:3000/api/v1/simulations/$ID/actions \
--H "Content-Type: application/json" \
--d '{"action":"start"}'
-```
-
-## Pause
-
-```bash
-curl -X POST \
-http://localhost:3000/api/v1/simulations/$ID/actions \
--H "Content-Type: application/json" \
--d '{"action":"pause"}'
-```
-
-## Reset
-
-```bash
-curl -X POST \
-http://localhost:3000/api/v1/simulations/$ID/actions \
--H "Content-Type: application/json" \
--d '{"action":"reset"}'
-```
-
-Reset returns the simulation to:
+Open:
 
 ```text
-status = idle
-elapsedSeconds = 0
+http://localhost:4200
 ```
+
+The frontend can also be accessed through the machine's local network address when the backend CORS configuration permits it.
 
 ---
 
-# Results
+## API
 
-```http
-GET /api/v1/simulations/:simulationId/results
+Base URL:
+
+```text
+http://localhost:3000/api/v1
 ```
 
-Example:
+Main endpoints:
 
-```bash
-curl \
-http://localhost:3000/api/v1/simulations/$ID/results
+```text
+POST   /simulations
+GET    /simulations
+GET    /simulations/:simulationId
+PUT    /simulations/:simulationId
+DELETE /simulations/:simulationId
+
+POST   /simulations/:simulationId/actions
+GET    /simulations/:simulationId/results
 ```
 
-Example response:
+Simulation actions:
 
 ```json
-{
-  "schemaVersion": 1,
-  "simulationId": "UUID",
-  "status": "paused",
-  "elapsedSeconds": 0.00005,
-  "metrics": {
-    "particleCount": 300,
-    "peakDensity": null,
-    "energyConfinementMs": null,
-    "wallImpactCount": 0
-  }
-}
+{ "action": "start" }
 ```
-
-Metrics that have not yet been implemented use `null`.
-
----
-
-# API Error Format
-
-Errors follow:
 
 ```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid simulation parameters",
-    "fields": {
-      "magneticField": "Must be >= 0"
-    }
-  }
-}
+{ "action": "pause" }
 ```
 
-Common status codes:
-
-| HTTP status | Meaning |
-|---|---|
-| `400` | Invalid input |
-| `404` | Simulation not found |
-| `409` | Invalid simulation state transition |
-| `500` | Internal server error |
+```json
+{ "action": "reset" }
+```
 
 ---
 
-# Socket.IO Live Simulation
+## Live Simulation
 
-Socket.IO provides live particle snapshots.
+Socket.IO is used to stream live simulation data.
 
-The frontend first subscribes to a simulation.
-
-## Frontend → Backend
-
-### Subscribe
+Main events:
 
 ```text
 simulation.subscribe
-```
-
-Payload:
-
-```text
-simulationId
-```
-
-### Unsubscribe
-
-```text
 simulation.unsubscribe
-```
 
-Payload:
-
-```text
-simulationId
-```
-
----
-
-# Backend → Frontend
-
-### Subscription Confirmation
-
-```text
 simulation.subscribed
-```
-
-### Live Snapshot
-
-```text
 simulation.updated
-```
-
-Example:
-
-```json
-{
-  "schemaVersion": 1,
-  "simulationId": "UUID",
-  "status": "running",
-  "elapsedSeconds": 0.000001,
-
-  "chamber": {
-    "radius": 0.42
-  },
-
-  "particles": [
-    {
-      "id": "electron-1",
-      "species": "electron",
-      "x": 0.176,
-      "y": 0.195
-    },
-    {
-      "id": "deuterium-1",
-      "species": "deuterium",
-      "x": -0.12,
-      "y": 0.08
-    }
-  ],
-
-  "events": [],
-
-  "metrics": {
-    "particleCount": 300,
-    "wallImpactCount": 0
-  }
-}
-```
-
-Particle coordinates are in **metres relative to the chamber centre**.
-
-The frontend is responsible for converting physical coordinates into Canvas coordinates.
-
----
-
-## Socket Error
-
-```text
 simulation.error
 ```
 
+`simulation.updated` contains the latest particle positions, simulation time, chamber information, and metrics.
+
 ---
 
-# Persistence Strategy
+## MongoDB
 
 MongoDB stores:
 
+- Simulation parameters
+- Simulation metadata
+- Status
+- Run summaries
+- Timestamps
+
+Live particle frames are **not** stored in MongoDB.
+
+Database:
+
 ```text
-simulation ID
-schema version
-name
-description
-parameters
-status
-run summary
-timestamps
+plasma_simulator
 ```
 
-It does **not** store every particle position from every frame.
-
-Live particle positions remain runtime data.
-
-A typical MongoDB record contains:
-
-```json
-{
-  "simulationId": "UUID",
-
-  "schemaVersion": 1,
-
-  "name": "Baseline Experiment",
-
-  "parameters": {
-    "magneticField": 2.4,
-    "electronDensity": 4.8,
-    "electronTemperature": 125,
-    "ionTemperature": 38,
-    "chamberRadius": 0.42
-  },
-
-  "status": "paused",
-
-  "runSummary": {
-    "elapsedSeconds": 0.000076,
-    "particleCount": 300,
-    "wallImpactCount": 0,
-    "peakDensity": null,
-    "energyConfinementMs": null
-  }
-}
-```
-
-Run summaries are checkpointed periodically rather than written on every simulation frame.
-
----
-
-# Inspecting MongoDB
-
-Start:
+To inspect it:
 
 ```bash
 mongosh
 ```
 
-Select database:
-
 ```javascript
 use plasma_simulator
-```
-
-Show collections:
-
-```javascript
-show collections
-```
-
-List simulations:
-
-```javascript
 db.simulations.find().pretty()
 ```
 
-Example query:
-
-```javascript
-db.simulations.findOne({
-    simulationId: "YOUR_SIMULATION_ID"
-})
-```
-
 ---
 
-# Physics Tests
+## Tests
 
-Run from the project root.
-
-## Uniform Magnetic Field
+Run physics tests from the project root:
 
 ```bash
 node simulation/tests/physics.test.js
-```
-
-Checks:
-
-- charged-particle gyromotion
-- velocity evolution
-- approximate kinetic-energy conservation
-
----
-
-## Zero Field
-
-```bash
 node simulation/tests/zero-field.test.js
-```
-
-Checks that:
-
-```text
-E = 0
-B = 0
-```
-
-produces constant-velocity straight-line motion.
-
----
-
-## Wall Collision
-
-```bash
 node simulation/tests/wall-collision.test.js
-```
-
-Checks:
-
-- wall crossing detection
-- reflected velocity
-- impact event generation
-- wall impact counter
-
----
-
-## Plasma Initialization
-
-```bash
 node simulation/tests/plasma-initializer.test.js
-```
-
-Checks:
-
-- electron population
-- deuterium population
-- thermal velocity generation
-- particles remain inside chamber
-- macroparticle weights
-- electrons have greater thermal speeds than deuterium ions
-
----
-
-## Snapshot Contract
-
-```bash
 node simulation/tests/snapshot-serializer.test.js
 ```
 
-Checks that live simulation snapshots match the frontend/backend interface.
+These test particle motion, energy conservation, wall collisions, plasma initialization, and the frontend snapshot format.
 
 ---
 
-# Current Scientific Assumptions
+## Current Limitations
 
-The current implementation intentionally simplifies real plasma physics.
+The simulator currently uses a reduced plasma model.
 
-Current assumptions include:
+It does not yet include:
 
-- 2D visualization domain
-- prescribed magnetic field
-- simplified chamber geometry
-- computational macroparticles
-- no self-consistent electrostatic field yet
-- no full tokamak magnetic geometry
-- no plasma-fluid coupling
-- no fusion reaction modelling
-- no radiation transport
-- no full collision operator
+- Full tokamak magnetic geometry
+- Self-consistent Particle-in-Cell fields
+- Full particle collision physics
+- Fusion reactions
+- Radiation transport
 
-The simulator is intended for educational visualization and software experimentation.
+These are possible future extensions.
 
 ---
 
-# Optional Future Physics
+## Development
 
-A reduced Particle-in-Cell extension may later add:
+Do not commit:
 
 ```text
-Particles
-    |
-    v
-Charge deposition
-    |
-    v
-Charge-density grid
-    |
-    v
-Poisson solver
-    |
-    v
-Electrostatic potential
-    |
-    v
-Electric field
-    |
-    v
-Field interpolation
-    |
-    v
-Boris particle update
+node_modules/
+.env
 ```
 
-This is a stretch goal and is not required for the initial working simulator.
+Keep physics calculations inside the simulation engine. The frontend should only visualize data produced by the backend.
 
----
-
-# Development Rules
-
-- Use short-lived feature branches.
-- Do not commit `node_modules/`.
-- Do not commit `.env`.
-- Do not commit passwords or credentials.
-- Keep `.env.example` updated.
-- Keep physics calculations out of the frontend renderer.
-- Keep Canvas coordinate conversion out of the physics engine.
-- Do not rename canonical API properties without updating the integration contract.
-- Do not change parameter units silently.
-- Do not persist every live particle frame to MongoDB.
-- Test components before merging into `main`.
-
----
-
-# Git Workflow
-
-Start from the latest `main`:
-
-```bash
-git checkout main
-git pull origin main
-```
-
-Create a feature branch:
-
-```bash
-git checkout -b feature/example
-```
-
-Commit:
-
-```bash
-git add .
-git commit -m "Implement example feature"
-```
-
-Push:
-
-```bash
-git push -u origin feature/example
-```
-
-Create a Pull Request into `main`, review, test, and merge.
-
----
-
-# Current Development Status
-
-### Completed
-
-- Simulation engine
-- Boris particle pusher
-- Electron/deuterium plasma initialization
-- Macroparticle representation
-- Wall collision handling
-- Physics sanity tests
-- Simulation lifecycle
-- Continuous numerical runner
-- REST API
-- API validation
-- MongoDB persistence
-- CRUD operations
-- Runtime reconstruction
-- Run-summary checkpointing
-- Socket.IO live updates
-- Live particle snapshot contract
-
-### In Progress / Remaining
-
-- Full AngularJS integration
-- Complete Canvas visualization integration
-- End-to-end testing
-- Additional diagnostics
-- Automated backend API tests
-- Restart-state recovery improvements
-- UI/error handling polish
-
-### Optional
-
-- User authentication and sessions, if required by the course rubric
-- Reduced PIC / Poisson solver
-- More realistic tokamak magnetic geometry
-- Additional plasma diagnostics
-
----
-
-# Team Integration Contract
-
-The shared frontend/backend contract is maintained separately in:
+The shared frontend/backend interface is documented in:
 
 ```text
 FRONTEND_BACKEND_CONTRACT.md
 ```
 
-When changing:
-
-- parameter names
-- parameter units
-- simulation statuses
-- REST response structures
-- Socket.IO event names
-- live snapshot structure
-
-update the contract **before merging the interface change**.
-
 ---
 
-# License
+## License
 
 Academic / educational project.
