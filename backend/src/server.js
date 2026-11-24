@@ -4,6 +4,10 @@ const http = require("http");
 
 const { Server } = require("socket.io");
 
+const { allowedOrigins } = require("./config/cors");
+
+const { isAllowedOrigin } = require("./config/cors");
+
 const app = require("./app");
 
 const simulationService = require("./services/simulation.service");
@@ -24,7 +28,15 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:4200",
+        origin: function (origin, callback) {
+            if (isAllowedOrigin(origin)) {
+                callback(null, true);
+
+                return;
+            }
+
+            callback(new Error("Origin not allowed by CORS"));
+        },
 
         methods: ["GET", "POST"],
     },

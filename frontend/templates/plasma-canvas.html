@@ -1,0 +1,40 @@
+<div class="canvas-container">
+
+    <canvas>
+    </canvas>
+
+
+    <div
+        class="canvas-status"
+        ng-if="snapshot"
+    >
+
+        <span class="live-dot"></span>
+
+        {{ snapshot.status }}
+
+    </div>
+
+
+    <div class="canvas-legend">
+
+        <span>
+
+            <i class="electron-dot"></i>
+
+            Electron
+
+        </span>
+
+
+        <span>
+
+            <i class="ion-dot"></i>
+
+            Deuterium
+
+        </span>
+
+    </div>
+
+</div>

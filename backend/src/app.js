@@ -4,12 +4,19 @@ const express =
 const cors =
     require("cors");
 
+const {
+    corsOptions
+} = require("./config/cors");
+
 const simulationRoutes =
     require("./routes/simulations.routes");
 
 const errorHandler =
     require("./middleware/error-handler");
 
+const {
+    allowedOrigins
+} = require("./config/cors");
 
 const app =
     express();
@@ -20,14 +27,14 @@ const app =
 // ==========================================
 
 app.use(
-    cors({
-
-        origin:
-            "http://localhost:4200"
-
-    })
+    cors(corsOptions)
 );
 
+app.use(
+    cors({
+        origin: allowedOrigins
+    })
+);
 
 app.use(
     express.json()

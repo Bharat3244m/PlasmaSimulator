@@ -50,9 +50,9 @@ class SimulationService {
         });
 
         const runner = new SimulationRunner(engine, {
-            updateRate: 60,
+            updateRate: 30,
 
-            stepsPerUpdate: 100,
+            stepsPerUpdate: 500,
 
             onSnapshot: () => {
                 this.emitSnapshot(simulationId, engine);

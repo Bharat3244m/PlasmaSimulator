@@ -1,0 +1,212 @@
+<aside class="panel controls-panel">
+
+    <div class="panel-heading">
+
+        <div>
+
+            <p class="eyebrow">
+                SETUP
+            </p>
+
+            <h2>
+                Parameters
+            </h2>
+
+        </div>
+
+
+        <button
+            class="text-button"
+            ng-click="restoreDefaults()"
+            ng-disabled="disabled"
+        >
+            Restore defaults
+        </button>
+
+    </div>
+
+
+    <label class="control">
+
+        <span>
+            Magnetic field
+            <b>B₀</b>
+        </span>
+
+        <div class="input-unit">
+
+            <input
+                type="number"
+                min="0"
+                step="0.1"
+                ng-model="
+                    parameters.magneticField
+                "
+                ng-change="notifyChange()"
+                ng-disabled="disabled"
+            >
+
+            <em>T</em>
+
+        </div>
+
+    </label>
+
+
+    <label class="control">
+
+        <span>
+            Electron density
+            <b>nₑ</b>
+        </span>
+
+        <div class="input-unit">
+
+            <input
+                type="number"
+                min="0"
+                step="0.1"
+                ng-model="
+                    parameters.electronDensity
+                "
+                ng-change="notifyChange()"
+                ng-disabled="disabled"
+            >
+
+            <em>10¹⁹ m⁻³</em>
+
+        </div>
+
+    </label>
+
+
+    <label class="control">
+
+        <span>
+            Electron temperature
+            <b>Tₑ</b>
+        </span>
+
+        <div class="input-unit">
+
+            <input
+                type="number"
+                min="0"
+                step="1"
+                ng-model="
+                    parameters.electronTemperature
+                "
+                ng-change="notifyChange()"
+                ng-disabled="disabled"
+            >
+
+            <em>eV</em>
+
+        </div>
+
+    </label>
+
+
+    <label class="control">
+
+        <span>
+            Ion temperature
+            <b>Tᵢ</b>
+        </span>
+
+        <div class="input-unit">
+
+            <input
+                type="number"
+                min="0"
+                step="1"
+                ng-model="
+                    parameters.ionTemperature
+                "
+                ng-change="notifyChange()"
+                ng-disabled="disabled"
+            >
+
+            <em>eV</em>
+
+        </div>
+
+    </label>
+
+
+    <label class="control">
+
+        <span>
+            Chamber radius
+            <b>R</b>
+        </span>
+
+        <div class="input-unit">
+
+            <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                ng-model="
+                    parameters.chamberRadius
+                "
+                ng-change="notifyChange()"
+                ng-disabled="disabled"
+            >
+
+            <em>m</em>
+
+        </div>
+
+    </label>
+
+
+    <div class="divider"></div>
+
+
+    <p class="eyebrow">
+        QUICK START
+    </p>
+
+
+    <div class="preset-list">
+
+        <button
+            class="preset"
+            ng-repeat="
+                preset in presets
+                track by preset.name
+            "
+            ng-click="
+                selectPreset(preset)
+            "
+            ng-disabled="disabled"
+        >
+
+            <span class="preset-icon">
+                ⌁
+            </span>
+
+
+            <span>
+
+                <strong>
+                    {{ preset.name }}
+                </strong>
+
+                <small>
+                    {{ preset.description }}
+                </small>
+
+            </span>
+
+
+            <span>
+                ›
+            </span>
+
+        </button>
+
+    </div>
+
+</aside>

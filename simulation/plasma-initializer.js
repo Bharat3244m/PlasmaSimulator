@@ -237,7 +237,7 @@ class PlasmaInitializer {
 
         const radius =
             chamberRadius *
-            0.75 *
+            0.90 *
             Math.sqrt(
                 Math.random()
             );

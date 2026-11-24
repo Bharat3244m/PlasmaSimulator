@@ -1,0 +1,37 @@
+<section class="metrics">
+    <article>
+        <span class="metric-icon violet"> ● </span>
+
+        <div>
+            <p>Particle count</p>
+
+            <strong> {{ metrics.particleCount | number }} </strong>
+
+            <small> computational particles </small>
+        </div>
+    </article>
+
+    <article>
+        <span class="metric-icon coral"> ⚡ </span>
+
+        <div>
+            <p>Wall impacts</p>
+
+            <strong> {{ metrics.wallImpactCount | number }} </strong>
+
+            <small> detected collisions </small>
+        </div>
+    </article>
+
+    <article>
+        <span class="metric-icon blue"> ◷ </span>
+
+        <div>
+            <p>Simulated time</p>
+
+            <strong> {{ elapsedMicroseconds | number:2 }} </strong>
+
+            <small> µs </small>
+        </div>
+    </article>
+</section>
